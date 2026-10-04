@@ -137,6 +137,23 @@
       } catch (e) {}
     }
 
+    playCancelSound() {
+      if (!this.enabled || !this.ctx) return;
+      try {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(340, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.16);
+      } catch (e) {}
+    }
+
     startChargeSound() {
       if (!this.enabled || !this.ctx || this.chargeOsc) return;
       try {
@@ -550,6 +567,8 @@
       this.mouseCharging = false;
       this.chargeStartTime = 0;
       this.rawPower = 0;            // 0.0 to 1.0
+      this.isPowerHolding = false;  // Menandakan status diam sejenak di 100%
+      this.powerHoldProgress = 0;   // 0.0 sampai 1.0 selama hold 1 detik
       this.cursor = { x: 700, y: 320 };
       this.dragStart = { x: 230, y: 535 };
       this.aimAngle = (52 * Math.PI) / 180; // Default aim angle ~52 deg
@@ -679,8 +698,13 @@
         this.handleMouseUp(e);
       });
 
-      // Spacebar alternative
+      // Spacebar alternative & Shift key to Cancel Shot
       window.addEventListener('keydown', (e) => {
+        if (e.key === 'Shift' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+          if (this.mouseCharging) {
+            this.cancelShot();
+          }
+        }
         if (e.code === 'Space' && !e.repeat && this.state === 'PLAYING') {
           e.preventDefault();
           this.handleMouseDown({ clientX: this.cursor.x, clientY: this.cursor.y });
@@ -689,7 +713,7 @@
       window.addEventListener('keyup', (e) => {
         if (e.code === 'Space' && this.state === 'PLAYING') {
           e.preventDefault();
-          this.handleMouseUp();
+          this.handleMouseUp(e);
         }
       });
     }
@@ -708,6 +732,8 @@
       this.mouseCharging = true;
       this.chargeStartTime = performance.now();
       this.rawPower = 0;
+      this.isPowerHolding = false;
+      this.powerHoldProgress = 0;
       this.sound.startChargeSound();
 
       this.updateAimAngle();
@@ -724,7 +750,16 @@
 
     handleMouseUp(e) {
       if (!this.mouseCharging) return;
+
+      // Fitur Cancel Shot: jika Shift ditekan / ditahan saat melepas klik
+      if (e && e.shiftKey) {
+        this.cancelShot();
+        return;
+      }
+
       this.mouseCharging = false;
+      this.isPowerHolding = false;
+      this.powerHoldProgress = 0;
       this.sound.stopChargeSound();
 
       if (this.state !== 'PLAYING' || !this.player.holdingBall) {
@@ -733,6 +768,18 @@
       }
 
       this.executeShot();
+    }
+
+    cancelShot() {
+      if (!this.mouseCharging) return;
+      this.mouseCharging = false;
+      this.isPowerHolding = false;
+      this.powerHoldProgress = 0;
+      this.rawPower = 0;
+      this.player.crouch = 0;
+      this.sound.stopChargeSound();
+      this.sound.playCancelSound();
+      this.triggerFloatNotification('BATAL TEMBAK!', false, 'cancelled');
     }
 
     updateAimAngle() {
@@ -811,12 +858,14 @@
       this.totalShotsLevel++;
       this.sound.playShootRelease();
       this.rawPower = 0;
+      this.isPowerHolding = false;
+      this.powerHoldProgress = 0;
     }
 
-    triggerFloatNotification(text, isDanger = false) {
+    triggerFloatNotification(text, isDanger = false, customClass = '') {
       this.el.floatFeedback.innerHTML = '';
       const div = document.createElement('div');
-      div.className = `floating-text ${isDanger ? 'overcharge' : ''}`;
+      div.className = `floating-text ${isDanger ? 'overcharge' : ''} ${customClass}`.trim();
       div.textContent = text;
       this.el.floatFeedback.appendChild(div);
       setTimeout(() => {
@@ -1064,12 +1113,30 @@
     update(dt) {
       this.wobbleTime += dt;
 
-      // Power Charging
+      // Power Charging (dengan jeda diam 1 detik saat mencapai 100%, lalu auto-looping ke 0%)
       if (this.mouseCharging && this.state === 'PLAYING') {
         const elapsed = performance.now() - this.chargeStartTime;
-        this.rawPower = Math.min(elapsed / 1150, 1.0);
+        const chargeDuration = 1150; // Durasi pengisian dari 0% ke 100% (ms)
+        const holdDuration = 1000;   // Diam sebentar di 100% selama 1 detik (ms)
+        const cycleTotal = chargeDuration + holdDuration;
+        const cycleTime = elapsed % cycleTotal;
+
+        if (cycleTime < chargeDuration) {
+          this.rawPower = cycleTime / chargeDuration;
+          this.isPowerHolding = false;
+          this.powerHoldProgress = 0;
+        } else {
+          this.rawPower = 1.0;
+          this.isPowerHolding = true;
+          this.powerHoldProgress = (cycleTime - chargeDuration) / holdDuration;
+        }
+
         this.player.crouch = this.rawPower;
         this.sound.updateChargeSound(this.rawPower);
+      } else {
+        this.isPowerHolding = false;
+        this.powerHoldProgress = 0;
+        this.player.crouch = 0;
       }
 
       // Timer
@@ -1785,6 +1852,11 @@
 
       const pct = Math.round(this.rawPower * 100);
       ctx.font = 'bold 13px "Bebas Neue", sans-serif';
+      if (this.isPowerHolding) {
+        ctx.fillStyle = Math.sin(this.wobbleTime * 14) > 0 ? '#ff4757' : '#FFE600';
+      } else {
+        ctx.fillStyle = '#FFE600';
+      }
       ctx.fillText(`${pct}%`, meterX + meterW / 2, meterY - 3);
 
       // 7. Sweet Spot & Overcharge Side Labels
@@ -1795,7 +1867,13 @@
         ctx.fillStyle = '#ff4757';
         ctx.font = 'bold 9px "Outfit", sans-serif';
         ctx.fillText('OVERCHARGE!', meterX + meterW + 6, overTop + 10);
-        ctx.fillText('(MELEMAH)', meterX + meterW + 6, overTop + 20);
+        if (this.isPowerHolding) {
+          ctx.fillStyle = '#FFE600';
+          ctx.font = 'bold 8px "Outfit", sans-serif';
+          ctx.fillText('🔄 LOOPING...', meterX + meterW + 6, overTop + 20);
+        } else {
+          ctx.fillText('(MELEMAH)', meterX + meterW + 6, overTop + 20);
+        }
       } else if (this.rawPower >= 0.68) {
         ctx.fillStyle = '#FFF01F';
         ctx.font = 'bold 9px "Outfit", sans-serif';
@@ -1803,6 +1881,17 @@
       } else {
         ctx.fillStyle = 'rgba(255, 230, 0, 0.7)';
         ctx.fillText('SWEET SPOT', meterX + meterW + 6, sweetTop + sweetHeight / 2 + 3);
+      }
+
+      // 8. Visual border pulse during 1-second hold
+      if (this.isPowerHolding) {
+        ctx.save();
+        ctx.strokeStyle = Math.sin(this.wobbleTime * 16) > 0 ? '#FFE600' : '#ff4757';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#FFE600';
+        ctx.shadowBlur = 8;
+        ctx.strokeRect(meterX, meterY, meterW, meterH);
+        ctx.restore();
       }
 
       ctx.restore();

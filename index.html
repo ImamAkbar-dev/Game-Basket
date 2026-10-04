@@ -88,15 +88,19 @@
     <!-- Footer Controls Guidance -->
     <footer class="hud-bottom">
       <div class="instruction-pill">
-        <span class="key-tag">KLIK & TARIK KURSOR</span> Atur Sudut & Kisi-Kisi Jalur Tembakan
+        <span class="key-tag">KLIK & TARIK</span> Sudut & Kisi-Kisi Jalur
       </div>
       <div class="instruction-separator">/</div>
       <div class="instruction-pill">
-        <span class="key-tag">TAHAN KLIK</span> Isi Power di Samping Avatar
+        <span class="key-tag">TAHAN KLIK</span> Isi Power (Auto-Loop 100%)
+      </div>
+      <div class="instruction-separator">/</div>
+      <div class="instruction-pill">
+        <span class="key-tag cancel-tag">SHIFT</span> Batal Tembak
       </div>
       <div class="instruction-separator">/</div>
       <div class="instruction-pill warning-pill">
-        <span class="key-tag warn-tag">PERHATIAN</span> Jangan Overcharge (>85%) agar tenaga tidak melemah!
+        <span class="key-tag warn-tag">PERHATIAN</span> Jangan Overcharge (>85%)!
       </div>
     </footer>
 
@@ -118,8 +122,15 @@
           <div class="rule-item">
             <div class="rule-icon">⚡</div>
             <div>
-              <h3>Power Meter di Samping Avatar</h3>
-              <p>Tahan klik kiri untuk mengisi meter kekuatan di samping kanan pemain. Lepaskan di <strong>Sweet Spot</strong> (70%-85%)!</p>
+              <h3>Power Meter & Looping</h3>
+              <p>Tahan klik kiri untuk mengisi meter. Jika menyentuh 100%, meter diam sejenak 1 detik lalu <strong>looping kembali ke 0%</strong>. Lepaskan di <strong>Sweet Spot</strong> (70%-85%)!</p>
+            </div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-icon">🛑</div>
+            <div>
+              <h3>Batal Tembak (Cancel Shot)</h3>
+              <p>Saat sedang menahan klik, tekan tombol <strong>Shift</strong> lalu lepas klik mouse untuk membatalkan tembakan tanpa melempar bola.</p>
             </div>
           </div>
           <div class="rule-item">
@@ -220,10 +231,11 @@
         <h2 class="modal-title">CARA <span class="yellow-text">BERMAIN</span></h2>
         <div class="help-content">
           <p><strong>1. Arah Tembakan (Kursor & Drag):</strong> Klik dan tarik mouse di area lapangan untuk mengarahkan bidikan. Kisi-kisi jalur tembakan akan memvisualisasikan busur lintasan bola.</p>
-          <p><strong>2. Power Meter di Samping Avatar:</strong> Tahan klik kiri untuk mengisi meter daya di sebelah kanan pemain. Indikator akan naik secara real-time.</p>
-          <p><strong>3. Bahaya Overcharge:</strong> Jika meter power melewati zona merah (>85%), kekuatan lemparan akan <em>drop</em> seketika menjadi lemah (airball). Lepaskan saat meter berada di area kuning Sweet Spot!</p>
-          <p><strong>4. Swish Shot:</strong> Bola yang masuk bersih tanpa mengenai besi ring memberikan +3 Poin & memicu Combo Multiplier!</p>
-          <p><strong>5. Level & Debuff:</strong> Semakin tinggi level yang kamu capai, semakin banyak rintangan debuff yang muncul (misalnya ring bergerak cepat, angin kencang, gravitasi bola bertambah, hingga kabut lapangan)!</p>
+          <p><strong>2. Power Meter & Looping:</strong> Tahan klik kiri untuk mengisi meter daya. Jika menyentuh 100%, meter diam sejenak 1 detik lalu otomatis <strong>looping kembali ke 0%</strong>.</p>
+          <p><strong>3. Batal Tembak (Cancel Shot):</strong> Sedang menahan klik tetapi ingin membatalkan tembakan? Tekan tombol <strong>Shift</strong> lalu lepas klik mouse untuk membatalkan tanpa melempar bola.</p>
+          <p><strong>4. Bahaya Overcharge:</strong> Jika meter power melewati zona merah (>85%), kekuatan lemparan akan <em>drop</em> seketika menjadi lemah (airball). Lepaskan saat meter berada di area kuning Sweet Spot!</p>
+          <p><strong>5. Swish Shot:</strong> Bola yang masuk bersih tanpa mengenai besi ring memberikan +3 Poin & memicu Combo Multiplier!</p>
+          <p><strong>6. Level & Debuff:</strong> Semakin tinggi level yang kamu capai, semakin banyak rintangan debuff yang muncul (misalnya ring bergerak cepat, angin kencang, gravitasi bola bertambah, hingga kabut lapangan)!</p>
         </div>
         <button id="btn-close-help" class="action-btn yellow-btn">
           <span>SAYA MENGERTI</span>

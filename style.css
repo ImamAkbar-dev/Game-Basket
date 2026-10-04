@@ -364,6 +364,11 @@ html, body {
   text-shadow: 0 0 20px var(--color-danger-glow);
 }
 
+.floating-text.cancelled {
+  color: #00d2ff;
+  text-shadow: 0 0 24px rgba(0, 210, 255, 0.9), 0 4px 12px rgba(0, 0, 0, 0.8);
+}
+
 @keyframes floatUp {
   0% { opacity: 0; transform: translateY(20px) scale(0.8); }
   20% { opacity: 1; transform: translateY(-5px) scale(1.15); }
@@ -418,6 +423,11 @@ html, body {
 .warn-tag {
   background: #ff4757;
   color: #ffffff;
+}
+
+.cancel-tag {
+  background: #00d2ff;
+  color: #07090e;
 }
 
 /* ==========================================================================
