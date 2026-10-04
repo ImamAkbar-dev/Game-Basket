@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CYBER HOOPS 2D // Street Basketball Arcade</title>
+  <meta name="description" content="Game bola basket 2D interaktif dengan mekanik power-charge, bar angle, level progression, serta random buff dan debuff.">
+  
+  <!-- Font Constraint: Exactly 2 Google Fonts (Bebas Neue untuk display/angka, Outfit untuk body/UI) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Container Utama Permainan -->
+  <div id="game-app">
+    <!-- Header HUD Atas -->
+    <header class="hud-top">
+      <div class="hud-left">
+        <div class="hud-card level-card">
+          <span class="hud-label">LEVEL</span>
+          <span id="level-display" class="hud-value yellow-text">01</span>
+        </div>
+        <div class="hud-card target-card">
+          <span class="hud-label">TARGET SKOR</span>
+          <span id="target-score-display" class="hud-value">15</span>
+        </div>
+      </div>
+
+      <div class="hud-center">
+        <div class="hud-card score-card">
+          <span class="hud-label">SKOR ANDA</span>
+          <div class="score-flex">
+            <span id="current-score-display" class="hud-value-xl yellow-text">0</span>
+            <div id="combo-badge" class="combo-badge hidden">x2 COMBO</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hud-right">
+        <div class="hud-card timer-card">
+          <span class="hud-label">SISA WAKTU</span>
+          <span id="timer-display" class="hud-value timer-val yellow-text">45<small>s</small></span>
+        </div>
+        <div class="audio-control-wrap">
+          <button id="audio-toggle-btn" class="icon-btn" title="Toggle Suara" aria-label="Toggle Suara">
+            <svg id="sound-icon-on" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+            <svg id="sound-icon-off" class="hidden" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+          </button>
+          <button id="help-toggle-btn" class="icon-btn" title="Petunjuk Kontrol" aria-label="Petunjuk Kontrol">
+            <span>?</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Bar Status Buff & Debuff Aktif -->
+    <div id="modifiers-bar" class="modifiers-bar">
+      <div class="modifier-group">
+        <span class="group-title buff-title">BUFFS:</span>
+        <div id="active-buffs" class="badges-container">
+          <span class="empty-badge">None</span>
+        </div>
+      </div>
+      <div class="modifier-group">
+        <span class="group-title debuff-title">DEBUFFS:</span>
+        <div id="active-debuffs" class="badges-container">
+          <span class="empty-badge">None</span>
+        </div>
+      </div>
+      <div id="wind-indicator" class="wind-indicator hidden">
+        <span class="wind-label">ANGIN:</span>
+        <span id="wind-arrow" class="wind-arrow">➔</span>
+        <span id="wind-speed" class="wind-speed yellow-text">0 m/s</span>
+      </div>
+    </div>
+
+    <!-- Area Canvas Interaktif Game -->
+    <main class="game-stage">
+      <canvas id="basketball-canvas" width="1280" height="720"></canvas>
+
+      <!-- Floating Notification Flash (Misal: "SWISH! +3", "PERFECT POWER!", "OVERCHARGED!") -->
+      <div id="float-feedback" class="float-feedback"></div>
+    </main>
+
+    <!-- Footer Controls Guidance -->
+    <footer class="hud-bottom">
+      <div class="instruction-pill">
+        <span class="key-tag">KLIK & TARIK KURSOR</span> Atur Sudut & Kisi-Kisi Jalur Tembakan
+      </div>
+      <div class="instruction-separator">/</div>
+      <div class="instruction-pill">
+        <span class="key-tag">TAHAN KLIK</span> Isi Power di Samping Avatar
+      </div>
+      <div class="instruction-separator">/</div>
+      <div class="instruction-pill warning-pill">
+        <span class="key-tag warn-tag">PERHATIAN</span> Jangan Overcharge (>85%) agar tenaga tidak melemah!
+      </div>
+    </footer>
+
+    <!-- MODAL: Start Screen -->
+    <div id="modal-start" class="modal-overlay active">
+      <div class="modal-card">
+        <div class="brand-badge">2D BASKETBALL ARCADE</div>
+        <h1 class="modal-title">CYBER <span class="yellow-text">HOOPS</span></h1>
+        <p class="modal-subtitle">Tembak bola ke ring, capai target skor sebelum waktu habis, dan adaptasi dengan random buff & debuff tiap level!</p>
+        
+        <div class="rules-grid">
+          <div class="rule-item">
+            <div class="rule-icon">🎯</div>
+            <div>
+              <h3>Arah Kursor & Kisi-Kisi Jalur</h3>
+              <p>Klik dan tarik mouse ke arah ring. Kisi-kisi jalur tembakan (trajectory grid) akan memproyeksikan lintasan bola secara real-time.</p>
+            </div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-icon">⚡</div>
+            <div>
+              <h3>Power Meter di Samping Avatar</h3>
+              <p>Tahan klik kiri untuk mengisi meter kekuatan di samping kanan pemain. Lepaskan di <strong>Sweet Spot</strong> (70%-85%)!</p>
+            </div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-icon">⚠️</div>
+            <div>
+              <h3>Bahaya Overcharge</h3>
+              <p>Jika meter melebihi batas 85% (zona merah), tenaga lemparan akan <strong>melemah drastis</strong> dan bola gagal mencapai ring.</p>
+            </div>
+          </div>
+        </div>
+
+        <button id="btn-start-game" class="action-btn yellow-btn">
+          <span>MULAI PERMAINAN</span>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- MODAL: Level Complete / Intermission (Buff & Debuff Roll) -->
+    <div id="modal-level-complete" class="modal-overlay">
+      <div class="modal-card">
+        <div class="brand-badge yellow-text">LEVEL SELESAI!</div>
+        <h2 id="level-complete-title" class="modal-title">LEVEL <span class="yellow-text">01</span> CLEARED</h2>
+        
+        <div class="level-stats-row">
+          <div class="stat-box">
+            <span class="stat-label">SKOR AKHIR</span>
+            <span id="level-clear-score" class="stat-val yellow-text">24</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">SISA WAKTU BONUS</span>
+            <span id="level-clear-time" class="stat-val">12s</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">SWISH ACCURACY</span>
+            <span id="level-clear-acc" class="stat-val yellow-text">80%</span>
+          </div>
+        </div>
+
+        <div class="modifiers-incoming">
+          <h3>EFEK RONDE BERIKUTNYA</h3>
+          <div class="modifiers-roll-grid">
+            <div class="roll-column">
+              <h4 class="buff-title">🌟 BUFF BARU DIPEROLEH:</h4>
+              <div id="new-buff-container" class="modifier-highlight-card buff-card"></div>
+            </div>
+            <div class="roll-column">
+              <h4 class="debuff-title">⚠️ DEBUFF BARU AKTIF:</h4>
+              <div id="new-debuff-container" class="modifier-highlight-card debuff-card"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="next-level-info">
+          <span>TARGET LEVEL BERIKUTNYA: <strong id="next-level-target" class="yellow-text">30 POIN</strong></span>
+        </div>
+
+        <button id="btn-next-level" class="action-btn yellow-btn">
+          <span>LANJUT KE LEVEL BERIKUTNYA</span>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- MODAL: Game Over -->
+    <div id="modal-game-over" class="modal-overlay">
+      <div class="modal-card">
+        <div class="brand-badge danger-badge">WAKTU HABIS</div>
+        <h2 class="modal-title">GAME <span class="yellow-text">OVER</span></h2>
+        <p class="modal-subtitle">Kamu gagal mencapai target skor untuk level ini. Coba lagi dan atur timing tembakanmu!</p>
+        
+        <div class="gameover-summary">
+          <div class="stat-box big-stat">
+            <span class="stat-label">TOTAL SKOR</span>
+            <span id="gameover-score" class="stat-val yellow-text">0</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">LEVEL TERTINGGI</span>
+            <span id="gameover-level" class="stat-val">01</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">HIGHSCORE REKORD</span>
+            <span id="gameover-highscore" class="stat-val yellow-text">0</span>
+          </div>
+        </div>
+
+        <button id="btn-restart-game" class="action-btn yellow-btn">
+          <span>MAIN LAGI</span>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- MODAL: Help / How to play -->
+    <div id="modal-help" class="modal-overlay">
+      <div class="modal-card">
+        <div class="brand-badge">PANDUAN LENGKAP</div>
+        <h2 class="modal-title">CARA <span class="yellow-text">BERMAIN</span></h2>
+        <div class="help-content">
+          <p><strong>1. Arah Tembakan (Kursor & Drag):</strong> Klik dan tarik mouse di area lapangan untuk mengarahkan bidikan. Kisi-kisi jalur tembakan akan memvisualisasikan busur lintasan bola.</p>
+          <p><strong>2. Power Meter di Samping Avatar:</strong> Tahan klik kiri untuk mengisi meter daya di sebelah kanan pemain. Indikator akan naik secara real-time.</p>
+          <p><strong>3. Bahaya Overcharge:</strong> Jika meter power melewati zona merah (>85%), kekuatan lemparan akan <em>drop</em> seketika menjadi lemah (airball). Lepaskan saat meter berada di area kuning Sweet Spot!</p>
+          <p><strong>4. Swish Shot:</strong> Bola yang masuk bersih tanpa mengenai besi ring memberikan +3 Poin & memicu Combo Multiplier!</p>
+          <p><strong>5. Level & Debuff:</strong> Semakin tinggi level yang kamu capai, semakin banyak rintangan debuff yang muncul (misalnya ring bergerak cepat, angin kencang, gravitasi bola bertambah, hingga kabut lapangan)!</p>
+        </div>
+        <button id="btn-close-help" class="action-btn yellow-btn">
+          <span>SAYA MENGERTI</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
